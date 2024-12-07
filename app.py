@@ -1,3 +1,4 @@
+pip install streamlit biopython
 import streamlit as st
 from Bio import SeqIO
 from Bio.Seq import Seq

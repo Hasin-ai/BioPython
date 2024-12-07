@@ -1,0 +1,57 @@
+from Bio import SeqIO
+from Bio.Seq import Seq
+import csv
+
+def calculate_gc_content(sequence):
+
+    gc_count = sequence.count('G') + sequence.count('C')
+    return (gc_count / len(sequence)) * 100
+
+def generate_primers_and_probes(sequence, primer_length, probe_length, amplicon_length):
+
+    results = []
+    seq_len = len(sequence)
+    for i in range(seq_len - amplicon_length + 1):
+        forward_primer = sequence[i:i + primer_length]
+        probe_start = i + primer_length
+        probe = sequence[probe_start:probe_start + probe_length]
+        reverse_primer_start = probe_start + probe_length
+        reverse_primer = str(Seq(sequence[reverse_primer_start:reverse_primer_start + primer_length]).reverse_complement())
+        results.append((forward_primer, probe, reverse_primer))
+    return results
+
+def write_csv_with_parameters(fna_file, output_csv, primer_length=32, probe_length=54, amplicon_length=190):
+
+    with open(fna_file, 'r') as file:
+        record = next(SeqIO.parse(file, "fasta"))
+        sequence = str(record.seq)
+
+    primers_probes = generate_primers_and_probes(sequence, primer_length, probe_length, amplicon_length)
+
+    with open(output_csv, 'w', newline='') as csvfile:
+        csvwriter = csv.writer(csvfile)
+
+        csvwriter.writerow(["Parameters and output for S.pneumonia example", "", ""])
+        csvwriter.writerow(["Parameters", "", ""])
+        csvwriter.writerow(["Primer Length", f"{primer_length}bp", ""])
+        csvwriter.writerow(["Probe Length", f"{probe_length}bp", ""])
+        csvwriter.writerow(["Amplicon length", f"{amplicon_length}bp", ""])
+        csvwriter.writerow(["Min GC content", "30%", ""])
+        csvwriter.writerow(["Max GC content", "70%", ""])
+        csvwriter.writerow(["Tolerated self binding region", "5", ""])
+        csvwriter.writerow(["Tolerated secondary structure region", "6", ""])
+        csvwriter.writerow(["Tolerate background binding bases", "N/A", ""])
+        csvwriter.writerow(["Number of background files checked", "N/A", ""])
+        csvwriter.writerow([])
+        csvwriter.writerow(["Forward_Primer", "Probe", "Reverse_Primer"])
+
+
+        for forward_primer, probe, reverse_primer in primers_probes:
+            csvwriter.writerow([forward_primer, probe, reverse_primer])
+
+file_path = input("give me file path:")
+fna_file = file_path
+output_csv = "output_primers_probes.csv"
+write_csv_with_parameters(fna_file, output_csv)
+
+print(f"CSV file has been saved as {output_csv}.")
